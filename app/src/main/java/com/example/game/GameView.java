@@ -9,6 +9,7 @@ import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.animation.TranslateAnimation;
 
 public class GameView extends SurfaceView implements Runnable{
 
@@ -21,7 +22,7 @@ public class GameView extends SurfaceView implements Runnable{
 
     private final Player player;
 
-
+    long last_time = System.nanoTime();
 
     private int directionX = 0;
     private int directionY = 0;
@@ -32,12 +33,15 @@ public class GameView extends SurfaceView implements Runnable{
     private Bitmap button;
     private Bitmap button_R, button_L, button_D, button_U;
     private Ui ui;
+    private final Background background;
 
+    int tics;
+    boolean playWalk = false;
 
     public GameView(GameActivity activity, int screenX, int screenY) {
         super(activity);
 
-
+        tics = 0;
         button = BitmapFactory.decodeResource(getResources(), R.drawable.player);
 
         // Ui for move
@@ -61,6 +65,7 @@ public class GameView extends SurfaceView implements Runnable{
         paint.setTextSize(128);
         paint.setColor(Color.WHITE);
 
+        background = new Background(screenX, screenY, getResources());
 
 
     }
@@ -71,7 +76,6 @@ public class GameView extends SurfaceView implements Runnable{
 
             update ();
             draw ();
-
 
         }
     }
@@ -100,6 +104,14 @@ public class GameView extends SurfaceView implements Runnable{
         if (player.x >= screenX - player.width)
             player.x = screenX - player.width;*/
 
+        long time = System.nanoTime();
+        int delta_time = (int) ((time - last_time) / 1000000);
+        last_time = time;
+
+        //System.out.println((System.currentTimeMillis()/1000));
+        // actual = System.currentTimeMillis()/1000;
+
+        //tics++;
 
     }
     private void draw () {
@@ -108,8 +120,10 @@ public class GameView extends SurfaceView implements Runnable{
         if (getHolder().getSurface().isValid()) {
             Canvas canvas = getHolder().lockCanvas();
 
+            canvas.drawBitmap(background.background, background.x, background.y, null);
+
             // pintando o fundo de branco
-            canvas.drawColor(Color.WHITE);
+            //canvas.drawColor(Color.WHITE);
 
 
             // Drawn the Ui buttons
@@ -125,41 +139,26 @@ public class GameView extends SurfaceView implements Runnable{
             player.posX = player.posX + (directionX * player.velocity);
             player.posY = player.posY + (directionY * player.velocity);
 
-
-            // Drawning the player on screen
             canvas.drawBitmap(player.sprite1, player.posX, player.posY, null);
-//            canvas.drawBitmap(player.sprite1, player.x,player.y, paint);
 
+            if (playWalk){
+                // Drawning the player on screen frame 1
+                canvas.drawBitmap(player.walkAnimation(), player.posX, player.posY, null);
+            }
             getHolder().unlockCanvasAndPost(canvas);
 
         }
+        // Re-drawing screen
         invalidate();
-
     }
 
 
     // Detectar toque na tela
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-
-//        SurfaceHolder holder = getHolder();
-//        Canvas canvas = holder.lockCanvas();
-//        if(canvas != null){
-//            canvas.drawColor(Color.WHITE);
-//
-//            canvas.drawBitmap(button, 50 + cont, 50, null);
-//
-//            holder.unlockCanvasAndPost(canvas);
-        //cont += 10;
-//            invalidate();
-//
-//        }
-
         switch (event.getAction()) {
             // Se clicar na tela
             case MotionEvent.ACTION_DOWN:
-
-
                 int xTouch = (int) event.getX();
                 int yTouch = (int) event.getY();
 
@@ -188,8 +187,7 @@ public class GameView extends SurfaceView implements Runnable{
                     directionY = -1;
                 }
 
-
-
+                playWalk = true;
 
                 //if (event.getX() < screenX / 2) {
                     //player.isMoveX = true;
@@ -197,22 +195,15 @@ public class GameView extends SurfaceView implements Runnable{
                 //else if (event.getX() > screenX / 2){
                     //player.isMoveY = true;
                 //}
-                //invalidate();
                 break;
+
             // Se tirar o dedo da tela
             case MotionEvent.ACTION_UP:
-
                 directionX = 0;
                 directionY = 0;
-
-                //player.isMoveX = false;
-                //player.isMoveY = false;
-                //if (event.getX() > screenX / 2)
-                    //flight.toShoot++;
-
+                playWalk = false;
                 break;
         }
-
         return true;
     }
 }
