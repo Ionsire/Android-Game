@@ -5,11 +5,17 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
+
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class GameView extends SurfaceView implements Runnable{
 
@@ -37,6 +43,12 @@ public class GameView extends SurfaceView implements Runnable{
 
     int tics;
     boolean playWalk = false;
+
+    Timer timer;
+    Bitmap frame;
+    Animation animation;
+
+    int contador = 0;
 
     public GameView(GameActivity activity, int screenX, int screenY) {
         super(activity);
@@ -72,7 +84,7 @@ public class GameView extends SurfaceView implements Runnable{
 
     @Override
     public void run() {
-        while (true) {
+        while (true) { // Laço principal
 
             update ();
             draw ();
@@ -126,7 +138,7 @@ public class GameView extends SurfaceView implements Runnable{
             //canvas.drawColor(Color.WHITE);
 
 
-            // Drawn the Ui buttons
+            // Drawn the Ui buttons with fixed positions
             canvas.drawBitmap(button_R, 310,730, null);
             canvas.drawBitmap(button_L, 50,730, null);
             canvas.drawBitmap(button_D, 180,860, null);
@@ -139,12 +151,24 @@ public class GameView extends SurfaceView implements Runnable{
             player.posX = player.posX + (directionX * player.velocity);
             player.posY = player.posY + (directionY * player.velocity);
 
-            canvas.drawBitmap(player.sprite1, player.posX, player.posY, null);
-
             if (playWalk){
                 // Drawning the player on screen frame 1
-                canvas.drawBitmap(player.walkAnimation(), player.posX, player.posY, null);
+
+                // 20 iteracoes é o ciclo completo para passar todos os frames
+                if(contador > 20){
+                    contador = 0;
+                }
+                canvas.drawBitmap(player.walkAnimation(contador), player.posX, player.posY, null);
+                contador ++; // acho q posso botar o contador em player e ir so adicionando aki fora
             }
+            else{
+                canvas.drawBitmap(player.sprite1, player.posX, player.posY, null);
+                //tics = 0;
+                contador = 0;
+            }
+
+
+
             getHolder().unlockCanvasAndPost(canvas);
 
         }
@@ -165,29 +189,33 @@ public class GameView extends SurfaceView implements Runnable{
                 // Test for button Right
                 if ( xTouch >= 310 && xTouch < (310 + button_R.getWidth())
                         && yTouch >= 730 && yTouch < (730 + button_R.getHeight())){
-                    System.out.println("TOCOU EM R");
+                    //System.out.println("TOCOU EM R");
                     directionX = 1;
+                    playWalk = true;
+
                 }
                 // Test for button Left
                 if ( xTouch >= 50 && xTouch < (50 + button_R.getWidth())
                         && yTouch >= 730 && yTouch < (730 + button_R.getHeight())){
-                    System.out.println("TOCOU EM L");
+                    //System.out.println("TOCOU EM L");
                     directionX = -1;
+                    playWalk = true;
                 }
                 // Test for button Down
                 if ( xTouch >= 180 && xTouch < (180 + button_R.getWidth())
                         && yTouch >= 860 && yTouch < (860 + button_R.getHeight())){
-                    System.out.println("TOCOU EM D");
+                    //System.out.println("TOCOU EM D");
                     directionY = 1;
+                    playWalk = true;
                 }
                 // Test for button Up
                 if ( xTouch >= 180 && xTouch < (180 + button_R.getWidth())
                         && yTouch >= 600 && yTouch < (600 + button_R.getHeight())){
-                    System.out.println("TOCOU EM U");
+                    //System.out.println("TOCOU EM U");
                     directionY = -1;
+                    playWalk = true;
                 }
 
-                playWalk = true;
 
                 //if (event.getX() < screenX / 2) {
                     //player.isMoveX = true;
@@ -205,5 +233,34 @@ public class GameView extends SurfaceView implements Runnable{
                 break;
         }
         return true;
+    }
+    public void animDelay()
+    {
+        timer = new Timer();
+        int delay = 0;   // delay de 0 seg. esse
+        int interval = 1000;  // intervalo de 2 seg.  aki era 2000
+
+        timer.scheduleAtFixedRate(new TimerTask() {
+            public void run() {
+                System.out.println("Call animation");
+                playWalk = true;
+            }
+        }, delay, interval);
+    }
+    public void stopAnimDelay(){
+        // Encerra as tarefas
+        timer.cancel();
+        playWalk = false;
+    }
+
+    public void waitTick(){
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                System.out.println("OLAA");
+            }
+        }, 2000);
+
     }
 }
